@@ -447,7 +447,8 @@ function getDateLabel(offset=0) {
 }
 function getLog(offset=0) {
   const k = getDateKey(offset);
-  if(!S.logs[k]) S.logs[k] = {exerciseId:null, foodIds:[]};
+  if(!S.logs[k]) S.logs[k] = {exerciseId:null, foodIds:[], customItems:[]};
+  if(!S.logs[k].customItems) S.logs[k].customItems = [];
   return S.logs[k];
 }
 
@@ -484,10 +485,12 @@ function renderDaily() {
   const ex = S.exercises.find(e=>e.id===log.exerciseId);
   const tdee = ex ? ex.tdee : 0;
   const eaten = log.foodIds.map(id=>S.foods.find(f=>f.id===id)).filter(Boolean);
-  const totalCal = eaten.reduce((s,f)=>s+f.cal,0);
-  const totalP = +eaten.reduce((s,f)=>s+f.p,0).toFixed(1);
-  const totalF = +eaten.reduce((s,f)=>s+f.f,0).toFixed(1);
-  const totalC = +eaten.reduce((s,f)=>s+f.c,0).toFixed(1);
+  const custom = log.customItems || [];
+  const allEaten = [...eaten.map(f=>({...f,isCustom:false})), ...custom.map((f,i)=>({...f,isCustom:true,customIdx:i}))];
+  const totalCal = allEaten.reduce((s,f)=>s+f.cal,0);
+  const totalP = +allEaten.reduce((s,f)=>s+f.p,0).toFixed(1);
+  const totalF = +allEaten.reduce((s,f)=>s+f.f,0).toFixed(1);
+  const totalC = +allEaten.reduce((s,f)=>s+f.c,0).toFixed(1);
 
   const exOpts = S.exercises.map(e=>`<option value="${e.id}" ${log.exerciseId===e.id?'selected':''}>${e.name}（TDEE ${e.tdee}）</option>`).join('');
   const cats = S.categories || [];
@@ -501,13 +504,16 @@ function renderDaily() {
         return uncats.length ? `<optgroup label="其他">${uncats.map(f=>`<option value="${f.id}">${f.name}（${f.cal} kcal）</option>`).join('')}</optgroup>` : '';
       })()
     : S.foods.map(f=>`<option value="${f.id}">${f.name}（${f.cal} kcal）</option>`).join('');
-  const logItems = eaten.length ? eaten.map((f,i)=>`
+  const logItems = allEaten.length ? allEaten.map((f,i)=>`
     <div class="log-item">
       <div style="flex:1;min-width:0">
-        <div class="log-name">${f.name}</div>
+        <div style="display:flex;align-items:center;gap:5px">
+          <span class="log-name">${f.name}</span>
+          ${f.isCustom?`<span style="font-size:10px;background:#eeeae2;color:#6b6b6b;padding:1px 6px;border-radius:10px">一次性</span>`:f.healthy===false?`<span style="font-size:10px;background:#fbeaea;color:#c0392b;padding:1px 6px;border-radius:10px">不健康</span>`:''}
+        </div>
         <div class="log-sub">${f.cal}kcal · P${f.p}g F${f.f}g C${f.c}g</div>
       </div>
-      <button class="del-btn" onclick="removeFoodLog(${i})">×</button>
+      <button class="del-btn" onclick="${f.isCustom?`removeCustomLog(${f.customIdx})`:`removeFoodLog(${i})`}">×</button>
     </div>`).join('') : `<div class="empty"><div class="empty-icon">🍽️</div>還沒有飲食記錄</div>`;
 
   const pGoal = tdee ? Math.round(tdee * S.goals.pRatio / 4) : 0;
@@ -541,6 +547,22 @@ function renderDaily() {
       <select id="food-picker">${foodOpts}</select>
       <button class="btn btn-primary btn-sm" onclick="addFoodLog()">＋加入</button>
     </div>
+    <div id="custom-form" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+      <div class="form-row"><span class="form-label">名稱</span><input type="text" id="cf-name" placeholder="食物名稱"></div>
+      <div class="form-row">
+        <span class="form-label">熱量</span><input type="number" id="cf-cal" placeholder="kcal" style="width:72px;flex:none">
+        <span class="form-label" style="margin-left:8px">蛋白</span><input type="number" id="cf-p" placeholder="g" style="width:60px;flex:none">
+      </div>
+      <div class="form-row">
+        <span class="form-label">脂肪</span><input type="number" id="cf-f" placeholder="g" style="width:72px;flex:none">
+        <span class="form-label" style="margin-left:8px">碳水</span><input type="number" id="cf-c" placeholder="g" style="width:60px;flex:none">
+      </div>
+      <div style="display:flex;gap:8px;margin-top:4px">
+        <button class="btn btn-primary btn-sm" style="flex:1" onclick="addCustomLog()">加入</button>
+        <button class="btn btn-sm" style="flex:1" onclick="document.getElementById('custom-form').style.display='none'">取消</button>
+      </div>
+    </div>
+    <button class="btn btn-sm" style="width:100%;margin-top:8px;justify-content:center;color:var(--text2)" onclick="document.getElementById('custom-form').style.display=document.getElementById('custom-form').style.display==='none'?'block':'none'">＋ 一次性紀錄（不存入食物庫）</button>
   </div>
 
   <div class="sec-label">今日總結</div>
@@ -807,6 +829,22 @@ function addFoodLog() {
 function removeFoodLog(i) {
   const log = getLog(dateOffset);
   log.foodIds.splice(i, 1);
+  saveState(); render();
+}
+function addCustomLog() {
+  const name = document.getElementById('cf-name').value.trim();
+  const cal  = parseFloat(document.getElementById('cf-cal').value)||0;
+  const p    = parseFloat(document.getElementById('cf-p').value)||0;
+  const f    = parseFloat(document.getElementById('cf-f').value)||0;
+  const c    = parseFloat(document.getElementById('cf-c').value)||0;
+  if(!name||!cal){showToast('請填入名稱和熱量');return;}
+  const log = getLog(dateOffset);
+  log.customItems.push({name,cal,p,f,c});
+  saveState(); showToast('已加入「'+name+'」'); render();
+}
+function removeCustomLog(i) {
+  const log = getLog(dateOffset);
+  log.customItems.splice(i,1);
   saveState(); render();
 }
 function addExercise() {
