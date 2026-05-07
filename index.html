@@ -379,48 +379,55 @@ let S = JSON.parse(JSON.stringify(DEFAULT_STATE));
 let currentTab = 'daily';
 let dateOffset = 0;
 let saveTimer = null;
-let isSaving = false;
-
-async function loadState() {
-  showSyncStatus('載入中…');
-  try {
-    const res = await fetch(API_URL);
-    const text = await res.text();
-    if (text && text !== '{}') {
-      const data = JSON.parse(text);
-      if (data.foods) S = data;
-    }
-  } catch(e) {
-    showSyncStatus('⚠️ 無法連線，使用暫存資料');
-  }
-  render();
-  showSyncStatus('');
-}
-
-function saveState() {
-  // Debounce: wait 1.5s after last change before saving
-  clearTimeout(saveTimer);
-  saveTimer = setTimeout(async () => {
-    isSaving = true;
-    showSyncStatus('儲存中…');
-    try {
-      await fetch(API_URL, {
-        method: 'POST',
-        body: JSON.stringify(S),
-        headers: { 'Content-Type': 'text/plain' }
-      });
-      showSyncStatus('✓ 已同步');
-      setTimeout(()=>showSyncStatus(''), 2000);
-    } catch(e) {
-      showSyncStatus('⚠️ 儲存失敗');
-    }
-    isSaving = false;
-  }, 1500);
-}
 
 function showSyncStatus(msg) {
   const el = document.getElementById('sync-status');
   if (el) el.textContent = msg;
+}
+
+// JSONP load - bypasses CORS for GET
+function loadState() {
+  showSyncStatus('載入中…');
+  const callbackName = 'ntCallback_' + Date.now();
+  const script = document.createElement('script');
+  script.src = API_URL + '?callback=' + callbackName;
+  window[callbackName] = function(data) {
+    try {
+      if (data && data.foods) S = data;
+    } catch(e) {}
+    delete window[callbackName];
+    document.body.removeChild(script);
+    render();
+    showSyncStatus('');
+  };
+  script.onerror = function() {
+    delete window[callbackName];
+    try { document.body.removeChild(script); } catch(e) {}
+    showSyncStatus('⚠️ 載入失敗');
+    render();
+  };
+  document.body.appendChild(script);
+}
+
+// no-cors POST for save (fire and forget, then verify with GET)
+function saveState() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    showSyncStatus('儲存中…');
+    const data = JSON.stringify(S);
+    // Use a form POST via fetch with no-cors to avoid CORS preflight
+    fetch(API_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body: data
+    }).then(() => {
+      showSyncStatus('✓ 已同步');
+      setTimeout(() => showSyncStatus(''), 2500);
+    }).catch(() => {
+      showSyncStatus('⚠️ 儲存失敗');
+    });
+  }, 1500);
 }
 
 // ── Date helpers ───────────────────────────────────────────────────────────
