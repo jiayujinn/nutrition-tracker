@@ -14,28 +14,28 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap');
 
 :root {
-–bg: #f7f5f0;
-–bg2: #eeeae2;
-–card: #ffffff;
-–text: #1a1a1a;
-–text2: #6b6b6b;
-–text3: #9a9a9a;
-–accent: #2d5016;
-–accent2: #4a7c2f;
-–accent-light: #e8f0e0;
-–red: #c0392b;
-–red-light: #fbeaea;
-–amber: #b7681a;
-–amber-light: #fdf3e3;
-–border: rgba(0,0,0,0.08);
-–border2: rgba(0,0,0,0.14);
-–radius: 14px;
-–radius-sm: 8px;
-–font: ‘Noto Sans TC’, sans-serif;
-–mono: ‘DM Mono’, monospace;
+--bg: #ffffff;
+--bg2: #f5f5f5;
+--card: #ffffff;
+--text: #000000;
+--text2: #444444;
+--text3: #666666;
+--accent: #2d5016;
+--accent2: #4a7c2f;
+--accent-light: #e8f0e0;
+--red: #c0392b;
+--red-light: #fbeaea;
+--amber: #b7681a;
+--amber-light: #fdf3e3;
+--border: rgba(0,0,0,0.08);
+--border2: rgba(0,0,0,0.14);
+--radius: 14px;
+--radius-sm: 8px;
+--font: ‘Noto Sans TC’, sans-serif;
+--mono: ‘DM Mono’, monospace;
 }
 
-- { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
 body {
 font-family: var(--font);
@@ -103,7 +103,7 @@ margin: 20px 0 8px;
 /* Card */
 .card {
 background: var(--card);
-border: 1px solid var(--border);
+border: none;
 border-radius: var(--radius);
 padding: 14px 16px;
 margin-bottom: 10px;
@@ -173,10 +173,9 @@ gap: 6px;
 }
 .btn:active { transform: scale(0.97); }
 .btn-primary {
-background: var(--bg2);
-border-color: var(--border2);
-color: var(--text);
-border-radius: var(--radius-sm);
+background: #ffffff;
+border: 1px solid rgba(0,0,0,0.15);
+color: #000000;
 }
 .btn-full { width: 100%; justify-content: center; margin-top: 10px; }
 .btn-danger { color: var(--red); border-color: rgba(192,57,43,0.3); font-size: 12px; height: 30px; padding: 0 10px; }
@@ -215,7 +214,7 @@ gap: 8px;
 .del-btn {
 width: 26px; height: 26px;
 border-radius: 50%;
-border: 1px solid var(--border2);
+border: none;
 background: transparent;
 color: var(--text3);
 cursor: pointer;
@@ -665,7 +664,7 @@ function renderExercise() {
 
   return `
   <div style="margin-bottom:8px">
-    <div onclick="window._exProfOpen=window._exProfOpen===false?true:false;render()" style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--card);border:1px solid var(--border);border-radius:${profOpen?'var(--radius-sm) var(--radius-sm) 0 0':'var(--radius-sm)'};cursor:pointer;user-select:none">
+    <div onclick="window._exProfOpen=window._exProfOpen===false?true:false;render()" style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#ffffff;border:none;border-radius:${profOpen?'var(--radius-sm) var(--radius-sm) 0 0':'var(--radius-sm)'};cursor:pointer;user-select:none">
       <span style="font-size:13px;font-weight:500">${profOpen?'▾':'▸'} 身體數據</span>
       <span style="font-size:12px;color:var(--text2);font-family:var(--mono)">${calcBmr} kcal</span>
     </div>
@@ -681,7 +680,7 @@ function renderExercise() {
   </div>
 
   <div style="margin-bottom:8px">
-    <div onclick="window._exAddOpen=window._exAddOpen===false?true:false;render()" style="display:flex;align-items:center;padding:10px 14px;background:var(--card);border:1px solid var(--border);border-radius:${addOpen?'var(--radius-sm) var(--radius-sm) 0 0':'var(--radius-sm)'};cursor:pointer;user-select:none">
+    <div onclick="window._exAddOpen=window._exAddOpen===false?true:false;render()" style="display:flex;align-items:center;padding:10px 14px;background:#ffffff;border:none;border-radius:${addOpen?'var(--radius-sm) var(--radius-sm) 0 0':'var(--radius-sm)'};cursor:pointer;user-select:none">
       <span style="font-size:13px;font-weight:500">${addOpen?'▾':'▸'} 新增運動類型</span>
     </div>
     <div style="display:${addOpen?'block':'none'};border:1px solid var(--border);border-top:none;border-radius:0 0 var(--radius-sm) var(--radius-sm);padding:12px 14px;background:var(--card)">
