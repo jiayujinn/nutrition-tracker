@@ -660,12 +660,12 @@ function renderExercise() {
   const p = S.profile || {height:157, weight:47, age:25};
   const calcBmr = Math.round(10*p.weight + 6.25*p.height - 5*p.age - 161);
 
-  const profOpen = window._exProfOpen !== true;
-  const addOpen  = window._exAddOpen  !== true;
+  const profOpen = window._exProfOpen === true;
+  const addOpen  = window._exAddOpen  === true;
 
   return `
   <div style="margin-bottom:8px">
-    <div onclick="window._exProfOpen=window._exProfOpen===false?true:false;render()" style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#ffffff;border:none;border-radius:${profOpen?'var(--radius-sm) var(--radius-sm) 0 0':'var(--radius-sm)'};cursor:pointer;user-select:none">
+    <div onclick="window._exProfOpen=window._exProfOpen===true?false:true;render()" style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#ffffff;border:none;border-radius:${profOpen?'var(--radius-sm) var(--radius-sm) 0 0':'var(--radius-sm)'};cursor:pointer;user-select:none">
       <span style="font-size:13px;font-weight:500">${profOpen?'▾':'▸'} 身體數據</span>
       <span style="font-size:12px;color:var(--text2);font-family:var(--mono)">${calcBmr} kcal</span>
     </div>
@@ -681,7 +681,7 @@ function renderExercise() {
   </div>
 
   <div style="margin-bottom:8px">
-    <div onclick="window._exAddOpen=window._exAddOpen===false?true:false;render()" style="display:flex;align-items:center;padding:10px 14px;background:#ffffff;border:none;border-radius:${addOpen?'var(--radius-sm) var(--radius-sm) 0 0':'var(--radius-sm)'};cursor:pointer;user-select:none">
+    <div onclick="window._exAddOpen=window._exAddOpen===true?false:true;render()" style="display:flex;align-items:center;padding:10px 14px;background:#ffffff;border:none;border-radius:${addOpen?'var(--radius-sm) var(--radius-sm) 0 0':'var(--radius-sm)'};cursor:pointer;user-select:none">
       <span style="font-size:13px;font-weight:500">${addOpen?'▾':'▸'} 新增運動類型</span>
     </div>
     <div style="display:${addOpen?'block':'none'};border:1px solid var(--border);border-top:none;border-radius:0 0 var(--radius-sm) var(--radius-sm);padding:12px 14px;background:var(--card)">
@@ -1000,12 +1000,30 @@ function resetAll() {
 }
 
 // ── Init ───────────────────────────────────────────────────────────────────
-// Pull-to-refresh
-let _pullY = 0;
-document.addEventListener('touchstart', e => { if(window.scrollY===0) _pullY=e.touches[0].clientY; }, {passive:true});
+// Pull-to-refresh (PWA compatible)
+let _pullY = 0, _pulling = false;
+const _indicator = document.createElement('div');
+_indicator.style.cssText = 'position:fixed;top:0;left:0;right:0;text-align:center;padding:8px;font-size:12px;color:#666;background:#fff;transform:translateY(-100%);transition:transform 0.2s;z-index:200';
+_indicator.textContent = '↓ 下拉重新整理';
+document.body.appendChild(_indicator);
+
+document.addEventListener('touchstart', e => {
+  if(window.scrollY === 0) { _pullY = e.touches[0].clientY; _pulling = true; }
+}, {passive:true});
+document.addEventListener('touchmove', e => {
+  if(!_pulling) return;
+  const dist = e.touches[0].clientY - _pullY;
+  if(dist > 0 && dist < 80) {
+    _indicator.style.transform = `translateY(${dist-40}px)`;
+    _indicator.textContent = dist > 60 ? '放開重新整理' : '↓ 下拉重新整理';
+  }
+}, {passive:true});
 document.addEventListener('touchend', e => {
-  if(_pullY && e.changedTouches[0].clientY - _pullY > 70) { showSync('重新整理中…'); loadState(); }
-  _pullY = 0;
+  if(!_pulling) return;
+  const dist = e.changedTouches[0].clientY - _pullY;
+  _indicator.style.transform = 'translateY(-100%)';
+  if(dist > 60) { showSync('重新整理中…'); loadState(); }
+  _pulling = false; _pullY = 0;
 }, {passive:true});
 
 render();
