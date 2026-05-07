@@ -355,18 +355,19 @@ const DEFAULT_STATE = {
     {id:9,name:'純有氧',bmr:1150,strength:0,cardio:220,tdee:1370},
   ],
   foods: [
-    {id:1,name:'一根香蕉',cal:90,p:1.1,f:0.3,c:23},
-    {id:2,name:'高蛋白+水',cal:140,p:30,f:1,c:3},
-    {id:3,name:'高蛋白+無糖豆漿',cal:225,p:45,f:6,c:7},
-    {id:4,name:'原塊嫩雞起司蛋白堡',cal:350,p:25,f:12,c:35},
-    {id:5,name:'無糖豆漿中杯',cal:100,p:10,f:5,c:4},
-    {id:6,name:'無糖豆漿大杯',cal:150,p:15,f:8,c:6},
-    {id:7,name:'原味蛋餅',cal:260,p:10,f:12,c:28},
-    {id:8,name:'起司蛋餅',cal:320,p:15,f:17,c:29},
-    {id:9,name:'半熟荷包蛋x2',cal:150,p:14,f:10,c:1},
-    {id:10,name:'飽哥滷雞腿便當',cal:490,p:35,f:20,c:40},
-    {id:11,name:'飽哥鯖魚便當',cal:540,p:30,f:35,c:35},
+    {id:1,name:'一根香蕉',cal:90,p:1.1,f:0.3,c:23,cat:'水果'},
+    {id:2,name:'高蛋白+水',cal:140,p:30,f:1,c:3,cat:'蛋白補充'},
+    {id:3,name:'高蛋白+無糖豆漿',cal:225,p:45,f:6,c:7,cat:'蛋白補充'},
+    {id:4,name:'原塊嫩雞起司蛋白堡',cal:350,p:25,f:12,c:35,cat:'正餐'},
+    {id:5,name:'無糖豆漿中杯',cal:100,p:10,f:5,c:4,cat:'飲品'},
+    {id:6,name:'無糖豆漿大杯',cal:150,p:15,f:8,c:6,cat:'飲品'},
+    {id:7,name:'原味蛋餅',cal:260,p:10,f:12,c:28,cat:'早餐'},
+    {id:8,name:'起司蛋餅',cal:320,p:15,f:17,c:29,cat:'早餐'},
+    {id:9,name:'半熟荷包蛋x2',cal:150,p:14,f:10,c:1,cat:'早餐'},
+    {id:10,name:'飽哥滷雞腿便當',cal:490,p:35,f:20,c:40,cat:'正餐'},
+    {id:11,name:'飽哥鯖魚便當',cal:540,p:30,f:35,c:35,cat:'正餐'},
   ],
+  categories: ['早餐','正餐','蛋白補充','飲品','水果','點心'],
   logs: {},
   nextFoodId: 100,
   nextExId: 50,
@@ -487,7 +488,17 @@ function renderDaily() {
   const totalC = +eaten.reduce((s,f)=>s+f.c,0).toFixed(1);
 
   const exOpts = S.exercises.map(e=>`<option value="${e.id}" ${log.exerciseId===e.id?'selected':''}>${e.name}（TDEE ${e.tdee}）</option>`).join('');
-  const foodOpts = S.foods.map(f=>`<option value="${f.id}">${f.name}（${f.cal} kcal）</option>`).join('');
+  const cats = S.categories || [];
+  const foodOpts = cats.length
+    ? cats.map(cat => {
+        const items = S.foods.filter(f=>f.cat===cat);
+        if(!items.length) return '';
+        return `<optgroup label="${cat}">${items.map(f=>`<option value="${f.id}">${f.name}（${f.cal} kcal）</option>`).join('')}</optgroup>`;
+      }).join('') + (() => {
+        const uncats = S.foods.filter(f=>!f.cat);
+        return uncats.length ? `<optgroup label="其他">${uncats.map(f=>`<option value="${f.id}">${f.name}（${f.cal} kcal）</option>`).join('')}</optgroup>` : '';
+      })()
+    : S.foods.map(f=>`<option value="${f.id}">${f.name}（${f.cal} kcal）</option>`).join('');
   const logItems = eaten.length ? eaten.map((f,i)=>`
     <div class="log-item">
       <div style="flex:1;min-width:0">
@@ -642,16 +653,65 @@ function renderExercise() {
 
 // ── Foods ──────────────────────────────────────────────────────────────────
 function renderFoods() {
-  const items = S.foods.map(f=>`
-    <div class="log-item">
-      <div style="flex:1;min-width:0">
-        <div class="log-name">${f.name}</div>
+  const cats = S.categories || [];
+  const catOpts = cats.map(c=>`<option value="${c}">${c}</option>`).join('');
+  const catFilter = `<option value="">全部</option>${catOpts}`;
+
+  // Group foods by category
+  const activeCat = window._foodCat || '';
+  const filtered = activeCat ? S.foods.filter(f=>f.cat===activeCat) : S.foods;
+
+  const items = filtered.map(f=>`
+    <div class="log-item" id="food-row-${f.id}">
+      <div style="flex:1;min-width:0" onclick="toggleEditFood(${f.id})">
+        <div style="display:flex;align-items:center;gap:6px">
+          <div class="log-name">${f.name}</div>
+          ${f.cat?`<span style="font-size:10px;background:var(--bg2);color:var(--text2);padding:1px 6px;border-radius:10px">${f.cat}</span>`:''}
+        </div>
         <div class="log-sub">${f.cal}kcal · P${f.p}g F${f.f}g C${f.c}g</div>
       </div>
       <button class="btn btn-danger" onclick="deleteFood(${f.id})">刪除</button>
+    </div>
+    <div id="food-edit-${f.id}" style="display:none;background:var(--bg2);border-radius:var(--radius-sm);padding:10px;margin-bottom:8px">
+      <div class="form-row"><span class="form-label">名稱</span><input type="text" id="ef-name-${f.id}" value="${f.name}"></div>
+      <div class="form-row">
+        <span class="form-label">熱量</span><input type="number" id="ef-cal-${f.id}" value="${f.cal}" style="width:72px;flex:none">
+        <span class="form-label" style="margin-left:8px">蛋白</span><input type="number" id="ef-p-${f.id}" value="${f.p}" style="width:60px;flex:none">
+      </div>
+      <div class="form-row">
+        <span class="form-label">脂肪</span><input type="number" id="ef-f-${f.id}" value="${f.f}" style="width:72px;flex:none">
+        <span class="form-label" style="margin-left:8px">碳水</span><input type="number" id="ef-c-${f.id}" value="${f.c}" style="width:60px;flex:none">
+      </div>
+      <div class="form-row">
+        <span class="form-label">分類</span>
+        <select id="ef-cat-${f.id}" style="flex:1">
+          <option value="">無分類</option>
+          ${cats.map(c=>`<option value="${c}" ${f.cat===c?'selected':''}>${c}</option>`).join('')}
+        </select>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:4px">
+        <button class="btn btn-primary btn-sm" style="flex:1" onclick="saveEditFood(${f.id})">儲存</button>
+        <button class="btn btn-sm" style="flex:1" onclick="toggleEditFood(${f.id})">取消</button>
+      </div>
     </div>`).join('');
 
   return `
+  <div class="sec-label">分類管理</div>
+  <div class="card">
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">
+      ${cats.map((c,i)=>`
+        <div style="display:flex;align-items:center;gap:4px;background:var(--bg2);border-radius:20px;padding:3px 4px 3px 10px;font-size:12px">
+          <span id="cat-label-${i}">${c}</span>
+          <button onclick="editCat(${i})" style="border:none;background:none;cursor:pointer;color:var(--text2);font-size:11px;padding:2px 4px">✎</button>
+          <button onclick="deleteCat(${i})" style="border:none;background:none;cursor:pointer;color:var(--text3);font-size:13px;padding:2px 4px">×</button>
+        </div>`).join('')}
+    </div>
+    <div class="form-row">
+      <input type="text" id="new-cat" placeholder="新增分類名稱" style="flex:1">
+      <button class="btn btn-primary btn-sm" onclick="addCat()">＋</button>
+    </div>
+  </div>
+
   <div class="sec-label">新增食物</div>
   <div class="card">
     <div class="form-row"><span class="form-label">名稱</span><input type="text" id="f-name" placeholder="食物名稱"></div>
@@ -663,10 +723,18 @@ function renderFoods() {
       <span class="form-label">脂肪</span><input type="number" id="f-f" placeholder="g" style="width:72px;flex:none">
       <span class="form-label" style="margin-left:8px">碳水</span><input type="number" id="f-c" placeholder="g" style="width:60px;flex:none">
     </div>
+    <div class="form-row">
+      <span class="form-label">分類</span>
+      <select id="f-cat" style="flex:1"><option value="">無分類</option>${catOpts}</select>
+    </div>
     <button class="btn btn-primary btn-full" onclick="addFood()">＋ 新增食物</button>
   </div>
-  <div class="sec-label">食物資料庫（${S.foods.length}項）</div>
-  <div class="card">${items}</div>`;
+
+  <div class="sec-label" style="display:flex;justify-content:space-between;align-items:center">
+    <span>食物資料庫（${S.foods.length}項）</span>
+    <select onchange="window._foodCat=this.value;render()" style="height:28px;font-size:12px;width:90px">${catFilter}</select>
+  </div>
+  <div class="card">${items.length ? items : '<div class="empty">此分類沒有食物</div>'}</div>`;
 }
 
 // ── Settings ───────────────────────────────────────────────────────────────
@@ -755,13 +823,53 @@ function addFood() {
   const p = parseFloat(document.getElementById('f-p').value)||0;
   const f = parseFloat(document.getElementById('f-f').value)||0;
   const c = parseFloat(document.getElementById('f-c').value)||0;
+  const cat = document.getElementById('f-cat').value;
   if(!name || !cal) { showToast('請填入名稱和熱量'); return; }
-  S.foods.push({id: S.nextFoodId++, name, cal, p, f, c});
+  S.foods.push({id: S.nextFoodId++, name, cal, p, f, c, cat});
   saveState(); showToast('已新增「'+name+'」'); render();
 }
 function deleteFood(id) {
   if(!confirm('確定刪除這個食物？')) return;
   S.foods = S.foods.filter(f=>f.id!==id);
+  saveState(); render();
+}
+function toggleEditFood(id) {
+  const el = document.getElementById('food-edit-'+id);
+  if(!el) return;
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+function saveEditFood(id) {
+  const f = S.foods.find(f=>f.id===id);
+  if(!f) return;
+  f.name = document.getElementById('ef-name-'+id).value.trim() || f.name;
+  f.cal  = parseFloat(document.getElementById('ef-cal-'+id).value)||f.cal;
+  f.p    = parseFloat(document.getElementById('ef-p-'+id).value)||f.p;
+  f.f    = parseFloat(document.getElementById('ef-f-'+id).value)||f.f;
+  f.c    = parseFloat(document.getElementById('ef-c-'+id).value)||f.c;
+  f.cat  = document.getElementById('ef-cat-'+id).value;
+  saveState(); showToast('已更新「'+f.name+'」'); render();
+}
+function addCat() {
+  const name = document.getElementById('new-cat').value.trim();
+  if(!name) return;
+  if(!S.categories) S.categories = [];
+  if(S.categories.includes(name)) { showToast('分類已存在'); return; }
+  S.categories.push(name);
+  saveState(); render();
+}
+function deleteCat(i) {
+  if(!confirm('確定刪除此分類？食物不會被刪除')) return;
+  const cat = S.categories[i];
+  S.foods.forEach(f=>{ if(f.cat===cat) f.cat=''; });
+  S.categories.splice(i,1);
+  saveState(); render();
+}
+function editCat(i) {
+  const name = prompt('修改分類名稱', S.categories[i]);
+  if(!name || name === S.categories[i]) return;
+  const old = S.categories[i];
+  S.foods.forEach(f=>{ if(f.cat===old) f.cat=name; });
+  S.categories[i] = name;
   saveState(); render();
 }
 function saveGoals() {
