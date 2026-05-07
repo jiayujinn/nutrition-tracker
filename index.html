@@ -495,14 +495,14 @@ function renderDaily() {
   const cats = S.categories || [];
   const foodOpts = cats.length
     ? cats.map(cat => {
-        const items = S.foods.filter(f=>f.cat===cat);
+        const items = S.foods.filter(f=>f.cat===cat).sort((a,b)=>a.name.localeCompare(b.name,'zh-TW'));
         if(!items.length) return '';
         return `<optgroup label="${cat}">${items.map(f=>`<option value="${f.id}">${f.name}（${f.cal} kcal）</option>`).join('')}</optgroup>`;
       }).join('') + (() => {
-        const uncats = S.foods.filter(f=>!f.cat);
+        const uncats = S.foods.filter(f=>!f.cat).sort((a,b)=>a.name.localeCompare(b.name,'zh-TW'));
         return uncats.length ? `<optgroup label="其他">${uncats.map(f=>`<option value="${f.id}">${f.name}（${f.cal} kcal）</option>`).join('')}</optgroup>` : '';
       })()
-    : S.foods.map(f=>`<option value="${f.id}">${f.name}（${f.cal} kcal）</option>`).join('');
+    : [...S.foods].sort((a,b)=>a.name.localeCompare(b.name,'zh-TW')).map(f=>`<option value="${f.id}">${f.name}（${f.cal} kcal）</option>`).join('');
   const logItems = allEaten.length ? allEaten.map((f,i)=>`
     <div class="log-item">
       <div style="flex:1;min-width:0">
@@ -741,8 +741,8 @@ function renderFoods() {
 
   // Two groups: healthy and unhealthy
   const groups = [
-    { key: 'healthy',   label: '健康', foods: S.foods.filter(f=>f.healthy) },
-    { key: 'unhealthy', label: '不健康', foods: S.foods.filter(f=>!f.healthy) },
+    { key: 'healthy',   label: '健康', foods: S.foods.filter(f=>f.healthy).sort((a,b)=>a.name.localeCompare(b.name,'zh-TW')) },
+    { key: 'unhealthy', label: '不健康', foods: S.foods.filter(f=>!f.healthy).sort((a,b)=>a.name.localeCompare(b.name,'zh-TW')) },
   ];
 
   const folders = groups.map(g => {
