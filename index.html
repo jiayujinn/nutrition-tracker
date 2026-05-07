@@ -311,15 +311,7 @@ white-space: nowrap;
 
 <div class="header">
   <div class="header-title">🥗 營養追蹤</div>
-  <div style="display:flex;align-items:center;gap:10px">
-    <button onclick="loadState()" style="border:none;background:none;cursor:pointer;color:#1a1a1a;padding:4px;display:flex;align-items:center;opacity:0.4">
-      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-    </button>
-    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:1px">
-      <div class="header-date" id="header-date"></div>
-      <div style="font-size:10px;color:var(--text3);font-family:var(--mono);min-height:14px" id="sync-status"></div>
-    </div>
-  </div>
+  <div style="font-size:12px;color:var(--text2);font-family:var(--mono)" id="sync-status"></div>
 </div>
 
 <div class="tabs">
@@ -379,7 +371,8 @@ const DEFAULT_STATE = {
   logs: {},
   nextFoodId: 100,
   nextExId: 50,
-  goals: { pRatio: 0.30, fRatio: 0.25, cRatio: 0.45 }
+  goals: { pRatio: 0.30, fRatio: 0.25, cRatio: 0.45 },
+  profile: { height:157, weight:47, age:25 }
 };
 
 const API_URL = 'https://script.google.com/macros/s/AKfycbzBoFO2JKvGIXCdwaLsDHOap6sud-cti8uvN1r1dPSikcC5J9LE7h1hBg-RT7X3ujzg/exec';
@@ -442,7 +435,7 @@ function saveState() {
 // ── Date helpers ───────────────────────────────────────────────────────────
 function getDateKey(offset=0) {
   const d = new Date(); d.setDate(d.getDate() + offset);
-  return d.toISOString().slice(0,10);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 function getDateLabel(offset=0) {
   const d = new Date(); d.setDate(d.getDate() + offset);
@@ -476,7 +469,6 @@ function showToast(msg) {
 
 // ── Render ─────────────────────────────────────────────────────────────────
 function render() {
-  document.getElementById('header-date').textContent = getDateLabel(dateOffset);
   const el = document.getElementById('main-content');
   if(currentTab==='daily') el.innerHTML = renderDaily();
   else if(currentTab==='summary') el.innerHTML = renderSummary();
@@ -498,7 +490,7 @@ function renderDaily() {
   const totalF = +allEaten.reduce((s,f)=>s+f.f,0).toFixed(1);
   const totalC = +allEaten.reduce((s,f)=>s+f.c,0).toFixed(1);
 
-  const exOpts = S.exercises.map(e=>`<option value="${e.id}" ${log.exerciseId===e.id?'selected':''}>${e.name}（TDEE ${e.tdee}）</option>`).join('');
+  const exOpts = S.exercises.map(e=>`<option value="${e.id}" ${log.exerciseId===e.id?'selected':''}>${e.name}</option>`).join('');
   const cats = S.categories || [];
   const foodOpts = cats.length
     ? cats.map(cat => {
@@ -539,11 +531,7 @@ function renderDaily() {
       <option value="">— 選擇運動類型 —</option>
       ${exOpts}
     </select>
-    ${ex ? `<div class="ex-tags">
-      <span class="tag">TDEE ${ex.tdee} kcal</span>
-      ${ex.strength ? `<span class="tag tag-amber">阻力 ${ex.strength} kcal</span>` : ''}
-      ${ex.cardio ? `<span class="tag tag-red">有氧 ${ex.cardio} kcal</span>` : ''}
-    </div>` : ''}
+    ${ex ? `<div class="ex-tags"><span class="tag">TDEE ${ex.tdee} kcal</span></div>` : ''}
   </div>
 
   <div class="sec-label">今日飲食</div>
@@ -568,7 +556,7 @@ function renderDaily() {
         <button class="btn btn-sm" style="flex:1" onclick="document.getElementById('custom-form').style.display='none'">取消</button>
       </div>
     </div>
-    <button class="btn btn-sm" style="width:100%;margin-top:8px;justify-content:center;color:var(--text2)" onclick="document.getElementById('custom-form').style.display=document.getElementById('custom-form').style.display==='none'?'block':'none'">＋ 一次性紀錄（不存入食物庫）</button>
+    <button class="btn btn-sm" style="width:100%;margin-top:8px;justify-content:center;color:var(--text2)" onclick="document.getElementById('custom-form').style.display=document.getElementById('custom-form').style.display==='none'?'block':'none'">＋ 一次性紀錄</button>
   </div>
 
   <div class="sec-label">今日總結</div>
@@ -668,11 +656,29 @@ function renderExercise() {
       <button class="btn btn-danger" onclick="deleteExercise(${e.id})">刪除</button>
     </div>`).join('');
 
+  const p = S.profile || {height:157, weight:47, age:25};
+  const calcBmr = Math.round(10*p.weight + 6.25*p.height - 5*p.age - 161);
+
   return `
+  <div class="sec-label">身體數據</div>
+  <div class="card">
+    <div class="form-row">
+      <span class="form-label">身高</span><input type="number" id="p-height" value="${p.height}" style="width:68px;flex:none"><span style="font-size:13px;color:var(--text2);margin-right:12px">cm</span>
+      <span class="form-label">體重</span><input type="number" id="p-weight" value="${p.weight}" style="width:68px;flex:none"><span style="font-size:13px;color:var(--text2)">kg</span>
+    </div>
+    <div class="form-row">
+      <span class="form-label">年齡</span><input type="number" id="p-age" value="${p.age}" style="width:68px;flex:none"><span style="font-size:13px;color:var(--text2)">歲</span>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px">
+      <span style="font-size:13px;color:var(--text2)">基礎代謝：<strong style="color:var(--text)">${calcBmr} kcal</strong></span>
+      <button class="btn btn-primary btn-sm" onclick="saveProfile()">套用到所有運動</button>
+    </div>
+
+  </div>
   <div class="sec-label">新增運動類型</div>
   <div class="card">
     <div class="form-row"><span class="form-label">名稱</span><input type="text" id="ex-name" placeholder="例：腿日+有氧"></div>
-    <div class="form-row"><span class="form-label">基礎代謝</span><input type="number" id="ex-bmr" value="1150"></div>
+    <div class="form-row"><span class="form-label">基礎代謝</span><input type="number" id="ex-bmr" value="${calcBmr}"></div>
     <div class="form-row"><span class="form-label">阻力消耗</span><input type="number" id="ex-str" value="0"></div>
     <div class="form-row"><span class="form-label">有氧消耗</span><input type="number" id="ex-car" value="0"></div>
     <button class="btn btn-primary btn-full" onclick="addExercise()">＋ 新增運動類型</button>
@@ -816,6 +822,15 @@ function renderSettings() {
 }
 
 // ── Actions ────────────────────────────────────────────────────────────────
+function saveProfile() {
+  const height = parseFloat(document.getElementById('p-height').value)||157;
+  const weight = parseFloat(document.getElementById('p-weight').value)||47;
+  const age    = parseFloat(document.getElementById('p-age').value)||25;
+  const bmr    = Math.round(10*weight + 6.25*height - 5*age - 161);
+  S.profile = {height, weight, age};
+  S.exercises.forEach(e => { e.bmr = bmr; e.tdee = bmr + e.strength + e.cardio; });
+  saveState(); showToast(`基礎代謝已更新為 ${bmr} kcal`); render();
+}
 function changeDate(d) {
   if(dateOffset + d > 0) return;
   dateOffset += d; render();
@@ -945,7 +960,7 @@ function exportData() {
   const blob = new Blob([json], {type:'application/json'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  const date = new Date().toISOString().slice(0,10);
+  const d2 = new Date(); const date = `${d2.getFullYear()}-${String(d2.getMonth()+1).padStart(2,'0')}-${String(d2.getDate()).padStart(2,'0')}`;
   a.href = url; a.download = `nutrition-backup-${date}.json`;
   a.click(); URL.revokeObjectURL(url);
   showToast('備份已下載 ✓');
@@ -974,6 +989,14 @@ function resetAll() {
 }
 
 // ── Init ───────────────────────────────────────────────────────────────────
+// Pull-to-refresh
+let _pullY = 0;
+document.addEventListener('touchstart', e => { if(window.scrollY===0) _pullY=e.touches[0].clientY; }, {passive:true});
+document.addEventListener('touchend', e => {
+  if(_pullY && e.changedTouches[0].clientY - _pullY > 70) { showSync('重新整理中…'); loadState(); }
+  _pullY = 0;
+}, {passive:true});
+
 render();
 loadState();
 </script>
