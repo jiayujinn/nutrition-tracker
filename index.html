@@ -30,7 +30,8 @@
 --border: rgba(0,0,0,0.08);
 --border2: rgba(0,0,0,0.14);
 --radius: 14px;
---radius-sm: 8px;
+--radius-sm: 0px;
+--radius-md: 24px;
 --font: ‘Noto Sans TC’, sans-serif;
 --mono: ‘DM Mono’, monospace;
 }
@@ -118,7 +119,7 @@ margin-bottom: 16px;
 }
 .date-nav-label { font-size: 16px; font-weight: 700; }
 .nav-btn {
-width: 34px; height: 34px;
+width: 30px; height: 30px;
 border-radius: var(--radius-sm);
 border: 1px solid var(--border2);
 background: var(--card);
@@ -160,7 +161,7 @@ font-size: 14px;
 font-weight: 500;
 padding: 0 16px;
 height: 40px;
-border-radius: var(--radius-sm);
+border-radius: var(--radius-md);
 border: 1px solid var(--border2);
 background: var(--card);
 color: var(--text);
@@ -189,8 +190,8 @@ padding: 3px 9px;
 border-radius: 20px;
 font-size: 12px;
 font-weight: 500;
-background: var(--accent-light);
-color: var(--accent);
+background: var(--bg);
+color: var(--text);
 font-family: var(--mono);
 }
 .tag-amber { background: var(--amber-light); color: var(--amber); }
@@ -539,7 +540,7 @@ function renderDaily() {
     ${logItems}
     <div class="add-row">
       <select id="food-picker">${foodOpts}</select>
-      <button class="btn btn-primary btn-sm" onclick="addFoodLog()">＋加入</button>
+      <button class="btn btn-primary btn-sm" style="color:var(--text2)" onclick="addFoodLog()">＋</button>
     </div>
     <div id="custom-form" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
       <div class="form-row"><span class="form-label">名稱</span><input type="text" id="cf-name" placeholder="食物名稱"></div>
@@ -556,7 +557,7 @@ function renderDaily() {
         <button class="btn btn-sm" style="flex:1" onclick="document.getElementById('custom-form').style.display='none'">取消</button>
       </div>
     </div>
-    <button class="btn btn-sm" style="width:100%;margin-top:8px;justify-content:center;color:var(--text2)" onclick="document.getElementById('custom-form').style.display=document.getElementById('custom-form').style.display==='none'?'block':'none'">＋ 一次性紀錄</button>
+    <button class="btn btn-sm" style="width:100%;margin-top:8px;justify-content:center;color:var(--text2)" onclick="document.getElementById('custom-form').style.display=document.getElementById('custom-form').style.display==='none'?'block':'none'">一次性紀錄</button>
   </div>
 
   <div class="sec-label">今日總結</div>
@@ -674,7 +675,7 @@ function renderExercise() {
       <div class="form-row"><span class="form-label">年齡</span><input type="number" id="p-age" value="${p.age}" style="width:80px;flex:none"><span style="font-size:13px;color:var(--text2);margin-left:6px">歲</span></div>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px">
         <span style="font-size:13px;color:var(--text2)">基礎代謝：<strong style="color:var(--text)">${calcBmr} kcal</strong></span>
-        <button class="btn btn-primary btn-sm" onclick="saveProfile()">套用到所有運動</button>
+        <button class="btn btn-primary btn-sm" style="color:var(--text2)" onclick="saveProfile()">套用到所有運動</button>
       </div>
     </div>
   </div>
@@ -688,7 +689,7 @@ function renderExercise() {
       <div class="form-row"><span class="form-label">基礎代謝</span><input type="number" id="ex-bmr" value="${calcBmr}"></div>
       <div class="form-row"><span class="form-label">阻力消耗</span><input type="number" id="ex-str" value="0"></div>
       <div class="form-row"><span class="form-label">有氧消耗</span><input type="number" id="ex-car" value="0"></div>
-      <button class="btn btn-primary btn-full" onclick="addExercise()">＋ 新增運動類型</button>
+      <button class="btn btn-primary btn-full" style="color:var(--text2)" onclick="addExercise()">＋</button>
     </div>
   </div>
 
@@ -780,7 +781,7 @@ function renderFoods() {
         <option value="0">❌ 不健康</option>
       </select>
     </div>
-    <button class="btn btn-primary btn-full" onclick="addFood()">＋ 新增食物</button>
+    <button class="btn btn-primary btn-full" style="color:var(--text2)" onclick="addFood()">＋</button>
   </div>
   <div class="sec-label">食物資料庫（${S.foods.length}項）</div>
   ${folders || '<div class="card"><div class="empty">還沒有食物</div></div>'}`;
