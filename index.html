@@ -660,8 +660,8 @@ function renderExercise() {
   const p = S.profile || {height:157, weight:47, age:25};
   const calcBmr = Math.round(10*p.weight + 6.25*p.height - 5*p.age - 161);
 
-  const profOpen = window._exProfOpen !== false;
-  const addOpen  = window._exAddOpen  !== false;
+  const profOpen = window._exProfOpen !== true;
+  const addOpen  = window._exAddOpen  !== true;
 
   return `
   <div style="margin-bottom:8px">
