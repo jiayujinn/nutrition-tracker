@@ -308,7 +308,10 @@ select:focus, input:focus { border-color: var(--accent2); }
 
 <div class="header">
   <div class="header-title">🥗 營養追蹤</div>
-  <div class="header-date" id="header-date"></div>
+  <div style="display:flex;flex-direction:column;align-items:flex-end;gap:1px">
+    <div class="header-date" id="header-date"></div>
+    <div style="font-size:10px;color:var(--text3);font-family:var(--mono);min-height:14px" id="sync-status"></div>
+  </div>
 </div>
 
 <div class="tabs">
@@ -370,19 +373,54 @@ const DEFAULT_STATE = {
   goals: { pRatio: 0.30, fRatio: 0.25, cRatio: 0.45 }
 };
 
-let S = loadState();
+const API_URL = 'https://script.google.com/macros/s/AKfycbzBoFO2JKvGIXCdwaLsDHOap6sud-cti8uvN1r1dPSikcC5J9LE7h1hBg-RT7X3ujzg/exec';
+
+let S = JSON.parse(JSON.stringify(DEFAULT_STATE));
 let currentTab = 'daily';
 let dateOffset = 0;
+let saveTimer = null;
+let isSaving = false;
 
-function loadState() {
+async function loadState() {
+  showSyncStatus('載入中…');
   try {
-    const raw = localStorage.getItem('nt_state');
-    if (raw) return JSON.parse(raw);
-  } catch(e) {}
-  return JSON.parse(JSON.stringify(DEFAULT_STATE));
+    const res = await fetch(API_URL);
+    const text = await res.text();
+    if (text && text !== '{}') {
+      const data = JSON.parse(text);
+      if (data.foods) S = data;
+    }
+  } catch(e) {
+    showSyncStatus('⚠️ 無法連線，使用暫存資料');
+  }
+  render();
+  showSyncStatus('');
 }
+
 function saveState() {
-  localStorage.setItem('nt_state', JSON.stringify(S));
+  // Debounce: wait 1.5s after last change before saving
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async () => {
+    isSaving = true;
+    showSyncStatus('儲存中…');
+    try {
+      await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify(S),
+        headers: { 'Content-Type': 'text/plain' }
+      });
+      showSyncStatus('✓ 已同步');
+      setTimeout(()=>showSyncStatus(''), 2000);
+    } catch(e) {
+      showSyncStatus('⚠️ 儲存失敗');
+    }
+    isSaving = false;
+  }, 1500);
+}
+
+function showSyncStatus(msg) {
+  const el = document.getElementById('sync-status');
+  if (el) el.textContent = msg;
 }
 
 // ── Date helpers ───────────────────────────────────────────────────────────
@@ -626,7 +664,7 @@ function renderSettings() {
   <div class="sec-label">資料備份</div>
   <div class="card">
     <div style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.6">
-      匯出會下載一個 <code style="font-family:var(--mono);background:var(--bg2);padding:1px 5px;border-radius:4px">.json</code> 檔案，包含所有食物、運動、每日記錄。匯入可還原資料。
+      資料自動同步到你的 Google Sheet，任何裝置開都是同一份。匯出可另外備份一份 .json 檔。
     </div>
     <div class="data-row">
       <button class="btn btn-primary" onclick="exportData()">⬇ 匯出備份</button>
@@ -661,7 +699,7 @@ function renderSettings() {
     <button class="btn" style="color:var(--red);border-color:rgba(192,57,43,0.3);width:100%;justify-content:center" onclick="resetAll()">🗑 清除所有資料（恢復預設）</button>
   </div>
 
-  <div style="text-align:center;margin-top:24px;font-size:11px;color:var(--text3);font-family:var(--mono)">資料儲存於瀏覽器 localStorage</div>`;
+  <div style="text-align:center;margin-top:24px;font-size:11px;color:var(--text3);font-family:var(--mono)">資料同步至 Google Sheets ☁️</div>`;
 }
 
 // ── Actions ────────────────────────────────────────────────────────────────
@@ -758,6 +796,7 @@ function resetAll() {
 
 // ── Init ───────────────────────────────────────────────────────────────────
 render();
+loadState();
 </script>
 </body>
 </html>
