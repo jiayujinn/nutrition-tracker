@@ -345,28 +345,28 @@ white-space: nowrap;
 // ── State ──────────────────────────────────────────────────────────────────
 const DEFAULT_STATE = {
   exercises: [
-    {id:1,name:'臀腿',bmr:1150,strength:180,cardio:0,tdee:1330},
-    {id:2,name:'臀腿+有氧',bmr:1150,strength:180,cardio:220,tdee:1550},
-    {id:3,name:'胸肩三頭',bmr:1150,strength:150,cardio:0,tdee:1300},
-    {id:4,name:'胸肩三頭+有氧',bmr:1150,strength:150,cardio:220,tdee:1520},
-    {id:5,name:'背二頭',bmr:1150,strength:160,cardio:0,tdee:1310},
-    {id:6,name:'背二頭+有氧',bmr:1150,strength:160,cardio:220,tdee:1530},
-    {id:7,name:'胸肩三頭背二頭',bmr:1150,strength:220,cardio:0,tdee:1370},
-    {id:8,name:'胸肩三頭背二頭+有氧',bmr:1150,strength:220,cardio:220,tdee:1590},
-    {id:9,name:'純有氧',bmr:1150,strength:0,cardio:220,tdee:1370},
+    {id:1,name:'臀腿',bmr:1150,strength:180,cardio:0,tdee:1330,updatedAt:0},
+    {id:2,name:'臀腿+有氧',bmr:1150,strength:180,cardio:220,tdee:1550,updatedAt:0},
+    {id:3,name:'胸肩三頭',bmr:1150,strength:150,cardio:0,tdee:1300,updatedAt:0},
+    {id:4,name:'胸肩三頭+有氧',bmr:1150,strength:150,cardio:220,tdee:1520,updatedAt:0},
+    {id:5,name:'背二頭',bmr:1150,strength:160,cardio:0,tdee:1310,updatedAt:0},
+    {id:6,name:'背二頭+有氧',bmr:1150,strength:160,cardio:220,tdee:1530,updatedAt:0},
+    {id:7,name:'胸肩三頭背二頭',bmr:1150,strength:220,cardio:0,tdee:1370,updatedAt:0},
+    {id:8,name:'胸肩三頭背二頭+有氧',bmr:1150,strength:220,cardio:220,tdee:1590,updatedAt:0},
+    {id:9,name:'純有氧',bmr:1150,strength:0,cardio:220,tdee:1370,updatedAt:0},
   ],
   foods: [
-    {id:1,name:'一根香蕉',cal:90,p:1.1,f:0.3,c:23,cat:'水果',healthy:true},
-    {id:2,name:'高蛋白+水',cal:140,p:30,f:1,c:3,cat:'蛋白補充',healthy:true},
-    {id:3,name:'高蛋白+無糖豆漿',cal:225,p:45,f:6,c:7,cat:'蛋白補充',healthy:true},
-    {id:4,name:'原塊嫩雞起司蛋白堡',cal:350,p:25,f:12,c:35,cat:'正餐',healthy:true},
-    {id:5,name:'無糖豆漿中杯',cal:100,p:10,f:5,c:4,cat:'飲品',healthy:true},
-    {id:6,name:'無糖豆漿大杯',cal:150,p:15,f:8,c:6,cat:'飲品',healthy:true},
-    {id:7,name:'原味蛋餅',cal:260,p:10,f:12,c:28,cat:'早餐',healthy:true},
-    {id:8,name:'起司蛋餅',cal:320,p:15,f:17,c:29,cat:'早餐',healthy:true},
-    {id:9,name:'半熟荷包蛋x2',cal:150,p:14,f:10,c:1,cat:'早餐',healthy:true},
-    {id:10,name:'飽哥滷雞腿便當',cal:490,p:35,f:20,c:40,cat:'正餐',healthy:true},
-    {id:11,name:'飽哥鯖魚便當',cal:540,p:30,f:35,c:35,cat:'正餐',healthy:true},
+    {id:1,name:'一根香蕉',cal:90,p:1.1,f:0.3,c:23,cat:'水果',healthy:true,updatedAt:0},
+    {id:2,name:'高蛋白+水',cal:140,p:30,f:1,c:3,cat:'蛋白補充',healthy:true,updatedAt:0},
+    {id:3,name:'高蛋白+無糖豆漿',cal:225,p:45,f:6,c:7,cat:'蛋白補充',healthy:true,updatedAt:0},
+    {id:4,name:'原塊嫩雞起司蛋白堡',cal:350,p:25,f:12,c:35,cat:'正餐',healthy:true,updatedAt:0},
+    {id:5,name:'無糖豆漿中杯',cal:100,p:10,f:5,c:4,cat:'飲品',healthy:true,updatedAt:0},
+    {id:6,name:'無糖豆漿大杯',cal:150,p:15,f:8,c:6,cat:'飲品',healthy:true,updatedAt:0},
+    {id:7,name:'原味蛋餅',cal:260,p:10,f:12,c:28,cat:'早餐',healthy:true,updatedAt:0},
+    {id:8,name:'起司蛋餅',cal:320,p:15,f:17,c:29,cat:'早餐',healthy:true,updatedAt:0},
+    {id:9,name:'半熟荷包蛋x2',cal:150,p:14,f:10,c:1,cat:'早餐',healthy:true,updatedAt:0},
+    {id:10,name:'飽哥滷雞腿便當',cal:490,p:35,f:20,c:40,cat:'正餐',healthy:true,updatedAt:0},
+    {id:11,name:'飽哥鯖魚便當',cal:540,p:30,f:35,c:35,cat:'正餐',healthy:true,updatedAt:0},
   ],
   categories: ['早餐','正餐','蛋白補充','飲品','水果','點心'],
   logs: {},
@@ -900,7 +900,7 @@ function addFood() {
   const c = parseFloat(document.getElementById('f-c').value)||0;
   const healthy = document.getElementById('f-healthy').value === '1';
   if(!name || !cal) { showToast('請填入名稱和熱量'); return; }
-  S.foods.push({id: S.nextFoodId++, name, cal, p, f, c, healthy});
+  S.foods.push({id: S.nextFoodId++, name, cal, p, f, c, healthy, updatedAt: Date.now()});
   saveState(); showToast('已新增「'+name+'」'); render();
 }
 function deleteFood(id) {
@@ -922,6 +922,7 @@ function saveEditFood(id) {
   f.f       = parseFloat(document.getElementById('ef-f-'+id).value)||f.f;
   f.c       = parseFloat(document.getElementById('ef-c-'+id).value)||f.c;
   f.healthy = document.getElementById('ef-healthy-'+id).value === '1';
+  f.updatedAt = Date.now();
   saveState(); showToast('已更新「'+f.name+'」'); render();
 }
 function toggleHealthGroup(key) {
