@@ -543,21 +543,25 @@ function renderDaily() {
   </div>
 
   ${tdee ? `<div class="card">
-    ${renderBar('熱量', totalCal, tdee, 'kcal')}
-    ${renderBar('蛋白質', totalP, pGoal, 'g')}
-    ${renderBar('脂肪', totalF, fGoal, 'g')}
-    ${renderBar('碳水', totalC, cGoal, 'g')}
+    ${renderBar('熱量', totalCal, tdee, 'kcal', 0, 300)}
+    ${renderBar('蛋白質', totalP, pGoal, 'g', 0, 999)}
+    ${renderBar('脂肪', totalF, fGoal, 'g', 0, 20)}
+    ${renderBar('碳水', totalC, cGoal, 'g', 0, 80)}
   </div>` : `<div class="card"><div class="empty"><div class="empty-icon">👆</div>選擇運動類型後顯示分析</div></div>`}`;
 }
 
-function renderBar(name, actual, goal, unit) {
-  const pct = goal ? Math.min(Math.round(actual / goal * 100), 120) : 0;
-  const color = pct >= 90 && pct <= 110 ? '#2d5016' : pct < 90 ? '#c0392b' : '#b7681a';
-  const badge = pct >= 90 && pct <= 110
-    ? `<span class="badge badge-ok">達標</span>`
-    : pct < 90
+function renderBar(name, actual, goal, unit, overMin=0, overMax=999) {
+  const pct = goal ? Math.min(Math.round(actual / goal * 100), 130) : 0;
+  const diff = actual - goal;
+  const isDeficit = diff < overMin;
+  const isOver = diff > overMax;
+  const isOk = !isDeficit && !isOver;
+  const color = isOk ? '#2d5016' : '#c0392b';
+  const badge = isDeficit
     ? `<span class="badge badge-deficit">缺 ${+(goal-actual).toFixed(1)}${unit}</span>`
-    : `<span class="badge badge-surplus">超 ${+(actual-goal).toFixed(1)}${unit}</span>`;
+    : isOver
+    ? `<span class="badge badge-deficit">超 ${+(actual-goal).toFixed(1)}${unit}</span>`
+    : `<span class="badge badge-ok">達標</span>`;
   return `<div class="prog-row">
     <div class="prog-header">
       <span class="prog-name">${name}</span>
