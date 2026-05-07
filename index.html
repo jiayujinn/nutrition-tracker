@@ -173,8 +173,8 @@ gap: 6px;
 }
 .btn:active { transform: scale(0.97); }
 .btn-primary {
-background: var(–accent);
-border-color: var(–accent);
+background: #1a1a1a;
+border-color: #1a1a1a;
 color: #fff;
 }
 .btn-full { width: 100%; justify-content: center; margin-top: 10px; }
@@ -653,36 +653,45 @@ function renderExercise() {
         <div class="log-name">${e.name}</div>
         <div class="log-sub">基礎${e.bmr} · 阻力${e.strength} · 有氧${e.cardio} → TDEE <strong>${e.tdee}</strong></div>
       </div>
-      <button class="btn btn-danger" onclick="deleteExercise(${e.id})">刪除</button>
+      <button class="del-btn" onclick="deleteExercise(${e.id})">×</button>
     </div>`).join('');
 
   const p = S.profile || {height:157, weight:47, age:25};
   const calcBmr = Math.round(10*p.weight + 6.25*p.height - 5*p.age - 161);
 
-  return `
-  <div class="sec-label">身體數據</div>
-  <div class="card">
-    <div class="form-row">
-      <span class="form-label">身高</span><input type="number" id="p-height" value="${p.height}" style="width:68px;flex:none"><span style="font-size:13px;color:var(--text2);margin-right:12px">cm</span>
-      <span class="form-label">體重</span><input type="number" id="p-weight" value="${p.weight}" style="width:68px;flex:none"><span style="font-size:13px;color:var(--text2)">kg</span>
-    </div>
-    <div class="form-row">
-      <span class="form-label">年齡</span><input type="number" id="p-age" value="${p.age}" style="width:68px;flex:none"><span style="font-size:13px;color:var(--text2)">歲</span>
-    </div>
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px">
-      <span style="font-size:13px;color:var(--text2)">基礎代謝：<strong style="color:var(--text)">${calcBmr} kcal</strong></span>
-      <button class="btn btn-primary btn-sm" onclick="saveProfile()">套用到所有運動</button>
-    </div>
+  const profOpen = window._exProfOpen !== false;
+  const addOpen  = window._exAddOpen  !== false;
 
+  return `
+  <div style="margin-bottom:8px">
+    <div onclick="window._exProfOpen=window._exProfOpen===false?true:false;render()" style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--card);border:1px solid var(--border);border-radius:${profOpen?'var(--radius-sm) var(--radius-sm) 0 0':'var(--radius-sm)'};cursor:pointer;user-select:none">
+      <span style="font-size:13px;font-weight:500">${profOpen?'▾':'▸'} 身體數據</span>
+      <span style="font-size:12px;color:var(--text2);font-family:var(--mono)">${calcBmr} kcal</span>
+    </div>
+    <div style="display:${profOpen?'block':'none'};border:1px solid var(--border);border-top:none;border-radius:0 0 var(--radius-sm) var(--radius-sm);padding:12px 14px;background:var(--card)">
+      <div class="form-row"><span class="form-label">身高</span><input type="number" id="p-height" value="${p.height}" style="width:80px;flex:none"><span style="font-size:13px;color:var(--text2);margin-left:6px">cm</span></div>
+      <div class="form-row"><span class="form-label">體重</span><input type="number" id="p-weight" value="${p.weight}" style="width:80px;flex:none"><span style="font-size:13px;color:var(--text2);margin-left:6px">kg</span></div>
+      <div class="form-row"><span class="form-label">年齡</span><input type="number" id="p-age" value="${p.age}" style="width:80px;flex:none"><span style="font-size:13px;color:var(--text2);margin-left:6px">歲</span></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px">
+        <span style="font-size:13px;color:var(--text2)">基礎代謝：<strong style="color:var(--text)">${calcBmr} kcal</strong></span>
+        <button class="btn btn-primary btn-sm" onclick="saveProfile()">套用到所有運動</button>
+      </div>
+    </div>
   </div>
-  <div class="sec-label">新增運動類型</div>
-  <div class="card">
-    <div class="form-row"><span class="form-label">名稱</span><input type="text" id="ex-name" placeholder="例：腿日+有氧"></div>
-    <div class="form-row"><span class="form-label">基礎代謝</span><input type="number" id="ex-bmr" value="${calcBmr}"></div>
-    <div class="form-row"><span class="form-label">阻力消耗</span><input type="number" id="ex-str" value="0"></div>
-    <div class="form-row"><span class="form-label">有氧消耗</span><input type="number" id="ex-car" value="0"></div>
-    <button class="btn btn-primary btn-full" onclick="addExercise()">＋ 新增運動類型</button>
+
+  <div style="margin-bottom:8px">
+    <div onclick="window._exAddOpen=window._exAddOpen===false?true:false;render()" style="display:flex;align-items:center;padding:10px 14px;background:var(--card);border:1px solid var(--border);border-radius:${addOpen?'var(--radius-sm) var(--radius-sm) 0 0':'var(--radius-sm)'};cursor:pointer;user-select:none">
+      <span style="font-size:13px;font-weight:500">${addOpen?'▾':'▸'} 新增運動類型</span>
+    </div>
+    <div style="display:${addOpen?'block':'none'};border:1px solid var(--border);border-top:none;border-radius:0 0 var(--radius-sm) var(--radius-sm);padding:12px 14px;background:var(--card)">
+      <div class="form-row"><span class="form-label">名稱</span><input type="text" id="ex-name" placeholder="例：腿日+有氧"></div>
+      <div class="form-row"><span class="form-label">基礎代謝</span><input type="number" id="ex-bmr" value="${calcBmr}"></div>
+      <div class="form-row"><span class="form-label">阻力消耗</span><input type="number" id="ex-str" value="0"></div>
+      <div class="form-row"><span class="form-label">有氧消耗</span><input type="number" id="ex-car" value="0"></div>
+      <button class="btn btn-primary btn-full" onclick="addExercise()">＋ 新增運動類型</button>
+    </div>
   </div>
+
   <div class="sec-label">運動清單（${S.exercises.length}項）</div>
   <div class="card">${items}</div>`;
 }
@@ -703,7 +712,7 @@ function renderFoods() {
         </div>
         <div class="log-sub">${f.cal}kcal · P${f.p}g F${f.f}g C${f.c}g</div>
       </div>
-      <button class="btn btn-danger" onclick="event.stopPropagation();deleteFood(${f.id})">刪除</button>
+      <button class="del-btn" onclick="event.stopPropagation();deleteFood(${f.id})">×</button>
     </div>
     <div id="food-edit-${f.id}" style="display:none;background:var(--bg2);border-radius:var(--radius-sm);padding:10px;margin:0 0 8px">
       <div class="form-row"><span class="form-label">名稱</span><input type="text" id="ef-name-${f.id}" value="${f.name}"></div>
