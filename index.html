@@ -357,17 +357,17 @@ const DEFAULT_STATE = {
     {id:9,name:'純有氧',bmr:1150,strength:0,cardio:220,tdee:1370},
   ],
   foods: [
-    {id:1,name:'一根香蕉',cal:90,p:1.1,f:0.3,c:23,cat:'水果'},
-    {id:2,name:'高蛋白+水',cal:140,p:30,f:1,c:3,cat:'蛋白補充'},
-    {id:3,name:'高蛋白+無糖豆漿',cal:225,p:45,f:6,c:7,cat:'蛋白補充'},
-    {id:4,name:'原塊嫩雞起司蛋白堡',cal:350,p:25,f:12,c:35,cat:'正餐'},
-    {id:5,name:'無糖豆漿中杯',cal:100,p:10,f:5,c:4,cat:'飲品'},
-    {id:6,name:'無糖豆漿大杯',cal:150,p:15,f:8,c:6,cat:'飲品'},
-    {id:7,name:'原味蛋餅',cal:260,p:10,f:12,c:28,cat:'早餐'},
-    {id:8,name:'起司蛋餅',cal:320,p:15,f:17,c:29,cat:'早餐'},
-    {id:9,name:'半熟荷包蛋x2',cal:150,p:14,f:10,c:1,cat:'早餐'},
-    {id:10,name:'飽哥滷雞腿便當',cal:490,p:35,f:20,c:40,cat:'正餐'},
-    {id:11,name:'飽哥鯖魚便當',cal:540,p:30,f:35,c:35,cat:'正餐'},
+    {id:1,name:'一根香蕉',cal:90,p:1.1,f:0.3,c:23,cat:'水果',healthy:true},
+    {id:2,name:'高蛋白+水',cal:140,p:30,f:1,c:3,cat:'蛋白補充',healthy:true},
+    {id:3,name:'高蛋白+無糖豆漿',cal:225,p:45,f:6,c:7,cat:'蛋白補充',healthy:true},
+    {id:4,name:'原塊嫩雞起司蛋白堡',cal:350,p:25,f:12,c:35,cat:'正餐',healthy:true},
+    {id:5,name:'無糖豆漿中杯',cal:100,p:10,f:5,c:4,cat:'飲品',healthy:true},
+    {id:6,name:'無糖豆漿大杯',cal:150,p:15,f:8,c:6,cat:'飲品',healthy:true},
+    {id:7,name:'原味蛋餅',cal:260,p:10,f:12,c:28,cat:'早餐',healthy:true},
+    {id:8,name:'起司蛋餅',cal:320,p:15,f:17,c:29,cat:'早餐',healthy:true},
+    {id:9,name:'半熟荷包蛋x2',cal:150,p:14,f:10,c:1,cat:'早餐',healthy:true},
+    {id:10,name:'飽哥滷雞腿便當',cal:490,p:35,f:20,c:40,cat:'正餐',healthy:true},
+    {id:11,name:'飽哥鯖魚便當',cal:540,p:30,f:35,c:35,cat:'正餐',healthy:true},
   ],
   categories: ['早餐','正餐','蛋白補充','飲品','水果','點心'],
   logs: {},
@@ -556,24 +556,24 @@ function renderDaily() {
   </div>
 
   ${tdee ? `<div class="card">
-    ${renderBar('熱量', totalCal, tdee, 'kcal', 0, 300)}
-    ${renderBar('蛋白質', totalP, pGoal, 'g', 0, 999)}
-    ${renderBar('脂肪', totalF, fGoal, 'g', 0, 20)}
-    ${renderBar('碳水', totalC, cGoal, 'g', 0, 80)}
+    ${renderBar('熱量', totalCal, tdee, 'kcal', 300)}
+    ${renderBar('蛋白質', totalP, pGoal, 'g', 999)}
+    ${renderBar('脂肪', totalF, fGoal, 'g', 20)}
+    ${renderBar('碳水', totalC, cGoal, 'g', 70)}
   </div>` : `<div class="card"><div class="empty"><div class="empty-icon">👆</div>選擇運動類型後顯示分析</div></div>`}`;
 }
 
-function renderBar(name, actual, goal, unit, overMin=0, overMax=999) {
+function renderBar(name, actual, goal, unit, overMax=999) {
   const pct = goal ? Math.min(Math.round(actual / goal * 100), 130) : 0;
   const diff = actual - goal;
-  const isDeficit = diff < overMin;
+  const isDeficit = diff < 0;
   const isOver = diff > overMax;
   const isOk = !isDeficit && !isOver;
-  const color = isOk ? '#2d5016' : '#c0392b';
-  const badge = isDeficit
-    ? `<span class="badge badge-deficit">缺 ${+(goal-actual).toFixed(1)}${unit}</span>`
-    : isOver
+  const color = isOver ? '#c0392b' : isDeficit ? '#b7681a' : '#2d5016';
+  const badge = isOver
     ? `<span class="badge badge-deficit">超 ${+(actual-goal).toFixed(1)}${unit}</span>`
+    : isDeficit
+    ? `<span class="badge badge-surplus">缺 ${+(goal-actual).toFixed(1)}${unit}</span>`
     : `<span class="badge badge-ok">達標</span>`;
   return `<div class="prog-row">
     <div class="prog-header">
@@ -655,20 +655,18 @@ function renderExercise() {
 
 // ── Foods ──────────────────────────────────────────────────────────────────
 function renderFoods() {
-  if(!window._openCats) window._openCats = {};
-  const cats = S.categories || [];
-  const catOpts = cats.map(c=>`<option value="${c}">${c}</option>`).join('');
-
-  // Build folder-style category groups
-  const allCats = [...cats];
-  const uncatFoods = S.foods.filter(f=>!f.cat||!cats.includes(f.cat));
-  if(uncatFoods.length) allCats.push('__uncat__');
+  if(!window._openHealth) window._openHealth = {};
 
   function foodEditBlock(f) {
+    const healthBadge = f.healthy
+      ? `<span style="font-size:10px;background:#e8f5e9;color:#2d5016;padding:1px 7px;border-radius:10px;margin-left:4px">健康</span>`
+      : `<span style="font-size:10px;background:#fbeaea;color:#c0392b;padding:1px 7px;border-radius:10px;margin-left:4px">不健康</span>`;
     return `
     <div class="log-item" id="food-row-${f.id}">
-      <div style="flex:1;min-width:0" onclick="toggleEditFood(${f.id})">
-        <div class="log-name">${f.name}</div>
+      <div style="flex:1;min-width:0;cursor:pointer" onclick="toggleEditFood(${f.id})">
+        <div style="display:flex;align-items:center;gap:4px">
+          <span class="log-name">${f.name}</span>${healthBadge}
+        </div>
         <div class="log-sub">${f.cal}kcal · P${f.p}g F${f.f}g C${f.c}g</div>
       </div>
       <button class="btn btn-danger" onclick="event.stopPropagation();deleteFood(${f.id})">刪除</button>
@@ -684,10 +682,10 @@ function renderFoods() {
         <span class="form-label" style="margin-left:8px">碳水</span><input type="number" id="ef-c-${f.id}" value="${f.c}" style="width:60px;flex:none">
       </div>
       <div class="form-row">
-        <span class="form-label">分類</span>
-        <select id="ef-cat-${f.id}" style="flex:1">
-          <option value="">無分類</option>
-          ${cats.map(c=>`<option value="${c}" ${f.cat===c?'selected':''}>${c}</option>`).join('')}
+        <span class="form-label">健康</span>
+        <select id="ef-healthy-${f.id}" style="flex:1">
+          <option value="1" ${f.healthy?'selected':''}>✅ 健康</option>
+          <option value="0" ${!f.healthy?'selected':''}>❌ 不健康</option>
         </select>
       </div>
       <div style="display:flex;gap:8px;margin-top:4px">
@@ -697,37 +695,30 @@ function renderFoods() {
     </div>`;
   }
 
-  const folders = allCats.map((cat,ci) => {
-    const foods = cat==='__uncat__' ? uncatFoods : S.foods.filter(f=>f.cat===cat);
-    if(!foods.length) return '';
-    const label = cat==='__uncat__' ? '未分類' : cat;
-    const isOpen = window._openCats[cat] !== false; // default open
+  // Two groups: healthy and unhealthy
+  const groups = [
+    { key: 'healthy',   label: '健康', foods: S.foods.filter(f=>f.healthy) },
+    { key: 'unhealthy', label: '不健康', foods: S.foods.filter(f=>!f.healthy) },
+  ];
+
+  const folders = groups.map(g => {
+    if(!g.foods.length) return '';
+    const isOpen = window._openHealth[g.key] !== false;
     const arrow = isOpen ? '▾' : '▸';
-    const catIdx = cats.indexOf(cat);
-    const editBtns = cat!=='__uncat__' ? `
-      <button onclick="event.stopPropagation();editCat(${catIdx})" style="border:none;background:none;cursor:pointer;color:var(--text2);font-size:13px;padding:2px 6px">✎</button>
-      <button onclick="event.stopPropagation();deleteCat(${catIdx})" style="border:none;background:none;cursor:pointer;color:var(--text3);font-size:16px;padding:2px 6px">×</button>` : '';
+    const headerBg = g.key==='healthy' ? '#e8f5e9' : '#fbeaea';
+    const headerColor = g.key==='healthy' ? '#2d5016' : '#c0392b';
     return `
     <div style="margin-bottom:8px">
-      <div onclick="toggleCat('${cat}')" style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--bg2);border-radius:var(--radius-sm);cursor:pointer;user-select:none">
-        <span style="font-size:14px;font-weight:500">${arrow} ${label} <span style="font-size:12px;color:var(--text2);font-weight:400">(${foods.length})</span></span>
-        <div style="display:flex;align-items:center">${editBtns}</div>
+      <div onclick="toggleHealthGroup('${g.key}')" style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:${headerBg};border-radius:${isOpen?'var(--radius-sm) var(--radius-sm) 0 0':'var(--radius-sm)'};cursor:pointer;user-select:none">
+        <span style="font-size:14px;font-weight:500;color:${headerColor}">${arrow} ${g.label} <span style="font-size:12px;font-weight:400">(${g.foods.length})</span></span>
       </div>
-      <div id="cat-body-${cat}" style="display:${isOpen?'block':'none'};border:1px solid var(--border);border-top:none;border-radius:0 0 var(--radius-sm) var(--radius-sm);padding:0 12px">
-        ${foods.map(f=>foodEditBlock(f)).join('')}
+      <div style="display:${isOpen?'block':'none'};border:1px solid var(--border);border-top:none;border-radius:0 0 var(--radius-sm) var(--radius-sm);padding:0 12px">
+        ${g.foods.map(f=>foodEditBlock(f)).join('')}
       </div>
     </div>`;
   }).join('');
 
   return `
-  <div class="sec-label">新增分類</div>
-  <div class="card">
-    <div class="form-row">
-      <input type="text" id="new-cat" placeholder="新增分類名稱" style="flex:1">
-      <button class="btn btn-primary btn-sm" onclick="addCat()">＋</button>
-    </div>
-  </div>
-
   <div class="sec-label">新增食物</div>
   <div class="card">
     <div class="form-row"><span class="form-label">名稱</span><input type="text" id="f-name" placeholder="食物名稱"></div>
@@ -740,15 +731,16 @@ function renderFoods() {
       <span class="form-label" style="margin-left:8px">碳水</span><input type="number" id="f-c" placeholder="g" style="width:60px;flex:none">
     </div>
     <div class="form-row">
-      <span class="form-label">分類</span>
-      <select id="f-cat" style="flex:1"><option value="">無分類</option>${catOpts}</select>
+      <span class="form-label">健康</span>
+      <select id="f-healthy" style="flex:1">
+        <option value="1">✅ 健康</option>
+        <option value="0">❌ 不健康</option>
+      </select>
     </div>
     <button class="btn btn-primary btn-full" onclick="addFood()">＋ 新增食物</button>
   </div>
-
   <div class="sec-label">食物資料庫（${S.foods.length}項）</div>
-  ${folders || '<div class="card"><div class="empty">還沒有食物</div></div>'}
-  `;
+  ${folders || '<div class="card"><div class="empty">還沒有食物</div></div>'}`;
 }
 
 // ── Settings ───────────────────────────────────────────────────────────────
@@ -837,9 +829,9 @@ function addFood() {
   const p = parseFloat(document.getElementById('f-p').value)||0;
   const f = parseFloat(document.getElementById('f-f').value)||0;
   const c = parseFloat(document.getElementById('f-c').value)||0;
-  const cat = document.getElementById('f-cat').value;
+  const healthy = document.getElementById('f-healthy').value === '1';
   if(!name || !cal) { showToast('請填入名稱和熱量'); return; }
-  S.foods.push({id: S.nextFoodId++, name, cal, p, f, c, cat});
+  S.foods.push({id: S.nextFoodId++, name, cal, p, f, c, healthy});
   saveState(); showToast('已新增「'+name+'」'); render();
 }
 function deleteFood(id) {
@@ -855,13 +847,19 @@ function toggleEditFood(id) {
 function saveEditFood(id) {
   const f = S.foods.find(f=>f.id===id);
   if(!f) return;
-  f.name = document.getElementById('ef-name-'+id).value.trim() || f.name;
-  f.cal  = parseFloat(document.getElementById('ef-cal-'+id).value)||f.cal;
-  f.p    = parseFloat(document.getElementById('ef-p-'+id).value)||f.p;
-  f.f    = parseFloat(document.getElementById('ef-f-'+id).value)||f.f;
-  f.c    = parseFloat(document.getElementById('ef-c-'+id).value)||f.c;
-  f.cat  = document.getElementById('ef-cat-'+id).value;
+  f.name    = document.getElementById('ef-name-'+id).value.trim() || f.name;
+  f.cal     = parseFloat(document.getElementById('ef-cal-'+id).value)||f.cal;
+  f.p       = parseFloat(document.getElementById('ef-p-'+id).value)||f.p;
+  f.f       = parseFloat(document.getElementById('ef-f-'+id).value)||f.f;
+  f.c       = parseFloat(document.getElementById('ef-c-'+id).value)||f.c;
+  f.healthy = document.getElementById('ef-healthy-'+id).value === '1';
+  f.cat     = document.getElementById('ef-cat-'+id).value;
   saveState(); showToast('已更新「'+f.name+'」'); render();
+}
+function toggleHealthGroup(key) {
+  if(!window._openHealth) window._openHealth = {};
+  window._openHealth[key] = window._openHealth[key] === false ? true : false;
+  render();
 }
 function toggleCat(cat) {
   if(!window._openCats) window._openCats = {};
