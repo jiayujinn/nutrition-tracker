@@ -853,7 +853,6 @@ function saveEditFood(id) {
   f.f       = parseFloat(document.getElementById('ef-f-'+id).value)||f.f;
   f.c       = parseFloat(document.getElementById('ef-c-'+id).value)||f.c;
   f.healthy = document.getElementById('ef-healthy-'+id).value === '1';
-  f.cat     = document.getElementById('ef-cat-'+id).value;
   saveState(); showToast('已更新「'+f.name+'」'); render();
 }
 function toggleHealthGroup(key) {
