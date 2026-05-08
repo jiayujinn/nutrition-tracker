@@ -425,7 +425,7 @@ function saveState() {
       headers: { 'Content-Type': 'text/plain' },
       body: data
     }).then(() => {
-      showSyncStatus('✓ 已同步');
+      showSyncStatus('✓');
       setTimeout(() => showSyncStatus(''), 2500);
     }).catch(() => {
       showSyncStatus('⚠️ 儲存失敗');
@@ -449,6 +449,10 @@ function getLog(offset=0) {
   const k = getDateKey(offset);
   if(!S.logs[k]) S.logs[k] = {exerciseId:null, foodIds:[], customItems:[]};
   if(!S.logs[k].customItems) S.logs[k].customItems = [];
+  // migrate old format: [id, id] → [{id, qty}]
+  S.logs[k].foodIds = S.logs[k].foodIds.map(item =>
+    typeof item === 'object' ? item : {id: item, qty: 1}
+  );
   return S.logs[k];
 }
 
@@ -483,9 +487,16 @@ function renderDaily() {
   const log = getLog(dateOffset);
   const ex = S.exercises.find(e=>e.id===log.exerciseId);
   const tdee = ex ? ex.tdee : 0;
-  const eaten = log.foodIds.map(id=>S.foods.find(f=>f.id===id)).filter(Boolean);
+  const eaten = log.foodIds.map(item=>{
+    const food = S.foods.find(f=>f.id===item.id);
+    if(!food) return null;
+    const qty = item.qty || 1;
+    return {...food, qty, isCustom:false,
+      cal:+(food.cal*qty).toFixed(1), p:+(food.p*qty).toFixed(1),
+      f:+(food.f*qty).toFixed(1), c:+(food.c*qty).toFixed(1)};
+  }).filter(Boolean);
   const custom = log.customItems || [];
-  const allEaten = [...eaten.map(f=>({...f,isCustom:false})), ...custom.map((f,i)=>({...f,isCustom:true,customIdx:i}))];
+  const allEaten = [...eaten, ...custom.map((f,i)=>({...f,isCustom:true,customIdx:i,qty:1}))];
   const totalCal = allEaten.reduce((s,f)=>s+f.cal,0);
   const totalP = +allEaten.reduce((s,f)=>s+f.p,0).toFixed(1);
   const totalF = +allEaten.reduce((s,f)=>s+f.f,0).toFixed(1);
@@ -512,6 +523,7 @@ function renderDaily() {
         </div>
         <div class="log-sub">${f.cal}kcal · P${f.p}g F${f.f}g C${f.c}g</div>
       </div>
+      ${f.isCustom?'':`<input type="number" value="${f.qty||1}" min="0.1" step="0.1" style="width:44px;height:28px;font-size:13px;text-align:center;border:1px solid #ddd;border-radius:6px;margin-right:4px;padding:0" onchange="updateFoodQty(${i},this.value)">`}
       <button class="del-btn" onclick="${f.isCustom?`removeCustomLog(${f.customIdx})`:`removeFoodLog(${i})`}">×</button>
     </div>`).join('') : `<div class="empty"><div class="empty-icon">🍽️</div>還沒有飲食記錄</div>`;
 
@@ -612,16 +624,16 @@ function renderSummary() {
 
   const recent = keys.slice(0,14);
   const avgCal = Math.round(recent.reduce((s,k)=>{
-    return s + S.logs[k].foodIds.map(id=>S.foods.find(f=>f.id===id)).filter(Boolean).reduce((ss,f)=>ss+f.cal,0);
+    return s + S.logs[k].foodIds.map(item=>{const id=typeof item==='object'?item.id:item;const qty=typeof item==='object'?item.qty:1;const food=S.foods.find(f=>f.id===id);return food?food.cal*qty:0;}).reduce((ss,v)=>ss+v,0);
   },0)/recent.length);
   const avgP = +(recent.reduce((s,k)=>{
-    return s + S.logs[k].foodIds.map(id=>S.foods.find(f=>f.id===id)).filter(Boolean).reduce((ss,f)=>ss+f.p,0);
+    return s + S.logs[k].foodIds.map(item=>{const id=typeof item==='object'?item.id:item;const qty=typeof item==='object'?item.qty:1;const food=S.foods.find(f=>f.id===id);return food?food.p*qty:0;}).reduce((ss,v)=>ss+v,0);
   },0)/recent.length).toFixed(1);
 
   const rows = recent.map(k=>{
     const log = S.logs[k];
     const ex = S.exercises.find(e=>e.id===log.exerciseId);
-    const eaten = log.foodIds.map(id=>S.foods.find(f=>f.id===id)).filter(Boolean);
+    const eaten = log.foodIds.map(item=>{const id=typeof item==='object'?item.id:item;const qty=typeof item==='object'?item.qty:1;const food=S.foods.find(f=>f.id===id);return food?{...food,cal:food.cal*qty,p:food.p*qty,f:food.f*qty,c:food.c*qty}:null;}).filter(Boolean);
     const totalCal = eaten.reduce((s,f)=>s+f.cal,0);
     const tdee = ex ? ex.tdee : 0;
     const diff = tdee ? totalCal - tdee : null;
@@ -854,13 +866,19 @@ function addFoodLog() {
   const v = document.getElementById('food-picker').value;
   if(!v) return;
   const log = getLog(dateOffset);
-  log.foodIds.push(parseInt(v));
+  log.foodIds.push({id: parseInt(v), qty: 1});
   saveState(); render();
 }
 function removeFoodLog(i) {
   const log = getLog(dateOffset);
   log.foodIds.splice(i, 1);
   saveState(); render();
+}
+function updateFoodQty(i, val) {
+  const qty = parseFloat(val);
+  if(!qty || qty <= 0) return;
+  const log = getLog(dateOffset);
+  if(log.foodIds[i]) { log.foodIds[i].qty = qty; saveState(); render(); }
 }
 function addCustomLog() {
   const name = document.getElementById('cf-name').value.trim();
