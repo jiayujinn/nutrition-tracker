@@ -425,7 +425,7 @@ function saveState() {
       headers: { 'Content-Type': 'text/plain' },
       body: data
     }).then(() => {
-      showSyncStatus('⇄');
+      showSyncStatus('✓ 已同步');
       setTimeout(() => showSyncStatus(''), 2500);
     }).catch(() => {
       showSyncStatus('⚠️ 儲存失敗');
