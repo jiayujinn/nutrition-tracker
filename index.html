@@ -566,10 +566,10 @@ function renderDaily() {
       </div>
       <div style="display:flex;gap:8px;margin-top:4px">
         <button class="btn btn-primary btn-sm" style="flex:1" onclick="addCustomLog()">加入</button>
-        <button class="btn btn-sm" style="flex:1" onclick="document.getElementById('custom-form').style.display='none'">取消</button>
+        <button class="btn btn-sm" style="flex:1" onclick="document.getElementById('custom-form').style.display='none';document.getElementById('custom-form-btn').style.display='block'">取消</button>
       </div>
     </div>
-    <button class="btn btn-sm" style="width:100%;margin-top:8px;justify-content:center;color:var(--text2)" onclick="document.getElementById('custom-form').style.display=document.getElementById('custom-form').style.display==='none'?'block':'none'">一次性紀錄</button>
+    <button class="btn btn-sm" style="width:100%;margin-top:8px;justify-content:center;color:var(--text2)" id="custom-form-btn" onclick="document.getElementById('custom-form').style.display='block';document.getElementById('custom-form-btn').style.display='none'">一次性紀錄</button>
   </div>
 
   <div class="sec-label">今日總結</div>
@@ -889,7 +889,13 @@ function addCustomLog() {
   if(!name||!cal){showToast('請填入名稱和熱量');return;}
   const log = getLog(dateOffset);
   log.customItems.push({name,cal,p,f,c});
-  saveState(); showToast('已加入「'+name+'」'); render();
+  saveState(); showToast('已加入「'+name+'」');
+  // reset form visibility
+  const btn = document.getElementById('custom-form-btn');
+  const form = document.getElementById('custom-form');
+  if(btn) btn.style.display='block';
+  if(form) form.style.display='none';
+  render();
 }
 function removeCustomLog(i) {
   const log = getLog(dateOffset);
