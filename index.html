@@ -623,9 +623,9 @@ function renderSummary() {
   if(!keys.length) return `<div class="empty" style="margin-top:60px"><div class="empty-icon">📊</div>還沒有記錄<br>先去今日分頁記錄吧</div>`;
 
   const recent = keys.slice(0,14);
-  const avgCal = Math.round(recent.reduce((s,k)=>{
+  const avgCal = +(recent.reduce((s,k)=>{
     return s + S.logs[k].foodIds.map(item=>{const id=typeof item==='object'?item.id:item;const qty=typeof item==='object'?item.qty:1;const food=S.foods.find(f=>f.id===id);return food?food.cal*qty:0;}).reduce((ss,v)=>ss+v,0);
-  },0)/recent.length);
+  },0)/recent.length).toFixed(1);
   const avgP = +(recent.reduce((s,k)=>{
     return s + S.logs[k].foodIds.map(item=>{const id=typeof item==='object'?item.id:item;const qty=typeof item==='object'?item.qty:1;const food=S.foods.find(f=>f.id===id);return food?food.p*qty:0;}).reduce((ss,v)=>ss+v,0);
   },0)/recent.length).toFixed(1);
