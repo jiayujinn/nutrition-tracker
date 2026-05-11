@@ -623,20 +623,31 @@ function renderSummary() {
   if(!keys.length) return `<div class="empty" style="margin-top:60px"><div class="empty-icon">📊</div>還沒有記錄<br>先去今日分頁記錄吧</div>`;
 
   const recent = keys.slice(0,14);
-  const avgCal = +(recent.reduce((s,k)=>{
-    return s + S.logs[k].foodIds.map(item=>{const id=typeof item==='object'?item.id:item;const qty=typeof item==='object'?item.qty:1;const food=S.foods.find(f=>f.id===id);return food?food.cal*qty:0;}).reduce((ss,v)=>ss+v,0);
-  },0)/recent.length).toFixed(1);
-  const avgP = +(recent.reduce((s,k)=>{
-    return s + S.logs[k].foodIds.map(item=>{const id=typeof item==='object'?item.id:item;const qty=typeof item==='object'?item.qty:1;const food=S.foods.find(f=>f.id===id);return food?food.p*qty:0;}).reduce((ss,v)=>ss+v,0);
-  },0)/recent.length).toFixed(1);
+
+  function getAllEatenCal(k) {
+    const log = S.logs[k];
+    const fromFoods = log.foodIds.map(item=>{const id=typeof item==='object'?item.id:item;const qty=typeof item==='object'?item.qty:1;const food=S.foods.find(f=>f.id===id);return food?food.cal*qty:0;}).reduce((s,v)=>s+v,0);
+    const fromCustom = (log.customItems||[]).reduce((s,f)=>s+f.cal,0);
+    return fromFoods + fromCustom;
+  }
+  function getAllEatenP(k) {
+    const log = S.logs[k];
+    const fromFoods = log.foodIds.map(item=>{const id=typeof item==='object'?item.id:item;const qty=typeof item==='object'?item.qty:1;const food=S.foods.find(f=>f.id===id);return food?food.p*qty:0;}).reduce((s,v)=>s+v,0);
+    const fromCustom = (log.customItems||[]).reduce((s,f)=>s+f.p,0);
+    return fromFoods + fromCustom;
+  }
+
+  const avgCal = +(recent.reduce((s,k)=>s+getAllEatenCal(k),0)/recent.length).toFixed(1);
+  const avgP   = +(recent.reduce((s,k)=>s+getAllEatenP(k),  0)/recent.length).toFixed(1);
 
   const rows = recent.map(k=>{
     const log = S.logs[k];
     const ex = S.exercises.find(e=>e.id===log.exerciseId);
     const eaten = log.foodIds.map(item=>{const id=typeof item==='object'?item.id:item;const qty=typeof item==='object'?item.qty:1;const food=S.foods.find(f=>f.id===id);return food?{...food,cal:food.cal*qty,p:food.p*qty,f:food.f*qty,c:food.c*qty}:null;}).filter(Boolean);
-    const totalCal = eaten.reduce((s,f)=>s+f.cal,0);
+    const customCal = (log.customItems||[]).reduce((s,f)=>s+f.cal,0);
+    const totalCal = +(eaten.reduce((s,f)=>s+f.cal,0) + customCal).toFixed(1);
     const tdee = ex ? ex.tdee : 0;
-    const diff = tdee ? totalCal - tdee : null;
+    const diff = tdee ? +(totalCal - tdee).toFixed(1) : null;
     const [,m,d] = k.split('-');
     return `<div class="hist-item">
       <div style="flex:1;min-width:0">
@@ -644,7 +655,7 @@ function renderSummary() {
         <div class="hist-name">${ex ? ex.name : '無運動記錄'}</div>
         <div class="hist-cal">${totalCal} kcal 攝取${tdee?' · TDEE '+tdee:''}</div>
       </div>
-      ${diff!==null ? `<span class="badge ${diff>50?'badge-surplus':diff<-50?'badge-deficit':'badge-ok'}">${diff>0?'+':''}${diff}</span>` : ''}
+      \${diff!==null ? \`<span class="badge \${diff>50?'badge-surplus':diff<-50?'badge-deficit':'badge-ok'}">\${diff>0?'+':''}\${diff}</span>\` : ''}
     </div>`;
   }).join('');
 
